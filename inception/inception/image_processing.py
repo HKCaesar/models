@@ -199,7 +199,9 @@ def distort_image_eval(image, height, width, thread_id=0, scope=None):
     boxes = tf.constant([[[0.1, 0.1, 0.9, 0.9]]], dtype= tf.float32)
     box_ind = tf.constant([1], dtype= tf.int32)
     crop_size = tf.constant([height, width], dtype= tf.int32)
+    image = tf.reshape(image, [1, height, width, 3])
     image = tf.image.crop_and_resize(image, boxes, box_ind, crop_size)
+    image = tf.reshape(image, [height, width, 3])
 
     image = tf.image.random_flip_left_right(image)
     image = distort_color(image, thread_id)
