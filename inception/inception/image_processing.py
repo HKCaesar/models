@@ -231,7 +231,7 @@ def distort_eval_image(image, height, width, thread_id=0, scope=None):
   """
   #randomDiff = tf.random_uniform([1, 1, 4], minval=-5, maxval=5)
   #offset = tf.constant([[[6, 6, height - 6, width - 6]]])
-  bbox = tf.constant([[[10, 10, height - 10, width - 10]]], dtype= float32)
+  bbox = tf.constant([[[10, 10, height - 10, width - 10]]], dtype= tf.float32)
 
   with tf.op_scope([image, height, width, bbox], scope, 'distort_image'):
     sample_distorted_bounding_box = tf.image.sample_distorted_bounding_box(
