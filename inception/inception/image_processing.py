@@ -195,30 +195,15 @@ def distort_color(image, thread_id=0, scope=None):
 
 def distort_image_eval(image, height, width, thread_id=0, scope=None):
   with tf.op_scope([image, height, width], scope, 'distort_image'):
+    image = tf.image.central_crop(image, central_fraction=0.875)
+    image = tf.image.random_flip_left_right(image)
+    image = distort_color(image, thread_id)
 
-    # This resizing operation may distort the images because the aspect
-    # ratio is not respected. We select a resize method in a round robin
-    # fashion based on the thread number.
-    # Note that ResizeMethod contains 4 enumerated resizing methods.
-    resize_method = thread_id % 4
-    distorted_image = tf.image.resize_images(image, [height, width],
-                                             method=resize_method)
-    # Restore the shape since the dynamic slice based upon the bbox_size loses
-    # the third dimension.
-    distorted_image.set_shape([height, width, 3])
-    if not thread_id:
-      tf.image_summary('cropped_resized_image',
-                       tf.expand_dims(distorted_image, 0))
-
-    # Randomly flip the image horizontally.
-    distorted_image = tf.image.random_flip_left_right(distorted_image)
-
-    # Randomly distort the colors.
-    distorted_image = distort_color(distorted_image, thread_id)
-
-    if not thread_id:
-      tf.image_summary('final_distorted_image',
-                       tf.expand_dims(distorted_image, 0))
+    # Resize the image to the original height and width.
+    image = tf.expand_dims(image, 0)
+    image = tf.image.resize_bilinear(image, [height, width],
+                                     align_corners=False)
+    image = tf.squeeze(image, [0])
     return distorted_image
 
 
