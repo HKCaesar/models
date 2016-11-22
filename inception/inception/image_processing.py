@@ -493,9 +493,9 @@ def batch_inputs(dataset, batch_size, train, num_preprocess_threads=None,
         image = image_preprocessing(image_buffer, bbox, train, thread_id)
         images_and_labels.append([image, label_index])
       else:
-        for augmented_sample in range(number_of_augmented_samples_duing_evaluation):
-          image = image_preprocessing(image_buffer, bbox, train, thread_id)
-          images_and_labels.append([image, label_index])
+        #for augmented_sample in range(number_of_augmented_samples_duing_evaluation):
+        image = image_preprocessing(image_buffer, bbox, train, thread_id)
+        images_and_labels.append([image, label_index])
 
     images, label_index_batch = tf.train.batch_join(
         images_and_labels,
