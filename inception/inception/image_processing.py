@@ -194,6 +194,34 @@ def distort_color(image, thread_id=0, scope=None):
     return image
 
 
+def distort_image_eval(image, height, width, bbox, thread_id=0, scope=None):
+  """Distort one image for training a network.
+
+  Distorting images provides a useful technique for augmenting the data
+  set during training in order to make the network invariant to aspects
+  of the image that do not effect the label.
+
+  Args:
+    image: 3-D float Tensor of image
+    height: integer
+    width: integer
+    bbox: 3-D float Tensor of bounding boxes arranged [1, num_boxes, coords]
+      where each coordinate is [0, 1) and the coordinates are arranged
+      as [ymin, xmin, ymax, xmax].
+    thread_id: integer indicating the preprocessing thread.
+    scope: Optional scope for op_scope.
+  Returns:
+    3-D float Tensor of distorted image used for training.
+  """
+  with tf.op_scope([image, height, width, bbox], scope, 'distort_image'):
+    # Randomly flip the image horizontally.
+    distorted_image = tf.image.random_flip_left_right(distorted_image)
+
+    if not thread_id:
+      tf.image_summary('final_distorted_image',
+                       tf.expand_dims(distorted_image, 0))
+    return distorted_image
+
 def distort_image(image, height, width, bbox, thread_id=0, scope=None):
   """Distort one image for training a network.
 
@@ -325,7 +353,7 @@ def image_preprocessing(image_buffer, bbox, train, thread_id=0):
   if train:
     image = distort_image(image, height, width, bbox, thread_id)
   else:
-    image = eval_image(image, height, width)
+    image = distort_image_eval(image, height, width)
 
   # Finally, rescale to [-1,1] instead of [0, 1)
   image = tf.sub(image, 0.5)
