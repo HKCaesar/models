@@ -322,10 +322,10 @@ def image_preprocessing(image_buffer, bbox, train, thread_id=0):
   height = FLAGS.image_size
   width = FLAGS.image_size
 
-  if train:
-    image = distort_image(image, height, width, bbox, thread_id)
-  else:
-    image = eval_image(image, height, width)
+#  if train:
+  image = distort_image(image, height, width, bbox, thread_id)
+#  else:
+#    image = eval_image(image, height, width)
 
   # Finally, rescale to [-1,1] instead of [0, 1)
   image = tf.sub(image, 0.5)
@@ -483,13 +483,19 @@ def batch_inputs(dataset, batch_size, train, num_preprocess_threads=None,
       reader = dataset.reader()
       _, example_serialized = reader.read(filename_queue)
 
+    number_of_augmented_samples_duing_evaluation = 8
     images_and_labels = []
     for thread_id in range(num_preprocess_threads):
       # Parse a serialized Example proto to extract the image and metadata.
       image_buffer, label_index, bbox, _ = parse_example_proto(
           example_serialized)
-      image = image_preprocessing(image_buffer, bbox, train, thread_id)
-      images_and_labels.append([image, label_index])
+      if train:
+        image = image_preprocessing(image_buffer, bbox, train, thread_id)
+        images_and_labels.append([image, label_index])
+      else:
+        for augmented_sample in range(number_of_augmented_samples_duing_evaluation):
+          image = image_preprocessing(image_buffer, bbox, train, thread_id)
+          images_and_labels.append([image, label_index])
 
     images, label_index_batch = tf.train.batch_join(
         images_and_labels,

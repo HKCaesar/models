@@ -147,9 +147,18 @@ def evaluate(dataset):
     # inference model.
     logits, _ = inception.inference(images, num_classes)
 
+    # TODO: support batches different from 32
+    topk=tf.nn.top_k(logits)
+    topkresh = tf.reshape(topk[1], [4,8], name=None)
+    freq=tf.map_fn(lambda cl: tf.map_fn(lambda y: tf.unique_with_counts(cl)[2][y] , tf.unique_with_counts(cl)[1]), topkresh, dtype=tf.int32)
+    max_freq_index= tf.argmax(freq, 1)
+    index_offset = tf.constant([0, 8, 16, 24], dtype=tf.int64)
+    max_freq_global_index = max_freq_index + index_offset
+    sample_with_max_freq=tf.gather(logits ,max_freq_global_index)
+
     # Calculate predictions.
-    top_1_op = tf.nn.in_top_k(logits, labels, 1)
-    top_5_op = tf.nn.in_top_k(logits, labels, 5)
+    top_1_op = tf.nn.in_top_k(sample_with_max_freq, labels, 1)
+    top_5_op = tf.nn.in_top_k(sample_with_max_freq, labels, 5)
 
     # Restore the moving average version of the learned variables for eval.
     variable_averages = tf.train.ExponentialMovingAverage(
