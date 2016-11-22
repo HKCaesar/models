@@ -149,10 +149,10 @@ def evaluate(dataset):
 
     # TODO: support batches different from 32
     topk=tf.nn.top_k(logits)
-    topkresh = tf.reshape(topk[1], [4,8], name=None)
+    topkresh = tf.reshape(topk[1], [2,16], name=None)
     freq=tf.map_fn(lambda cl: tf.map_fn(lambda y: tf.unique_with_counts(cl)[2][y] , tf.unique_with_counts(cl)[1]), topkresh, dtype=tf.int32)
     max_freq_index= tf.argmax(freq, 1)
-    index_offset = tf.constant([0, 8, 16, 24], dtype=tf.int64)
+    index_offset = tf.constant([0, 16], dtype=tf.int64)
     max_freq_global_index = max_freq_index + index_offset
     sample_with_max_freq=tf.gather(logits ,max_freq_global_index)
     labels_with_max_freq=tf.gather(labels ,max_freq_global_index)
