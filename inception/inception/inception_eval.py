@@ -155,10 +155,11 @@ def evaluate(dataset):
     index_offset = tf.constant([0, 8, 16, 24], dtype=tf.int64)
     max_freq_global_index = max_freq_index + index_offset
     sample_with_max_freq=tf.gather(logits ,max_freq_global_index)
+    labels_with_max_freq=tf.gather(labels ,max_freq_global_index)
 
     # Calculate predictions.
-    top_1_op = tf.nn.in_top_k(sample_with_max_freq, labels, 1)
-    top_5_op = tf.nn.in_top_k(sample_with_max_freq, labels, 5)
+    top_1_op = tf.nn.in_top_k(sample_with_max_freq, labels_with_max_freq, 1)
+    top_5_op = tf.nn.in_top_k(sample_with_max_freq, labels_with_max_freq, 5)
 
     # Restore the moving average version of the learned variables for eval.
     variable_averages = tf.train.ExponentialMovingAverage(
