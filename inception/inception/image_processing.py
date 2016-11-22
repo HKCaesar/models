@@ -274,7 +274,7 @@ def distort_image(image, height, width, bbox, thread_id=0, scope=None):
     return distorted_image
 
 
-def eval_image(image, height, width, scope=None):
+def eval_image(image, height, width, scope=None, thread_id=0):
   """Prepare one image for evaluation.
 
   Args:
@@ -290,6 +290,7 @@ def eval_image(image, height, width, scope=None):
     # the original image.
     image = tf.image.central_crop(image, central_fraction=0.875)
     image = tf.image.random_flip_left_right(image)
+    image = distort_color(image, thread_id)
     # Resize the image to the original height and width.
     image = tf.expand_dims(image, 0)
     image = tf.image.resize_bilinear(image, [height, width],
@@ -325,7 +326,7 @@ def image_preprocessing(image_buffer, bbox, train, thread_id=0):
   if train:
     image = distort_image(image, height, width, bbox, thread_id)
   else:
-    image = eval_image(image, height, width)
+    image = eval_image(image, height, width, thread_id)
 
   # Finally, rescale to [-1,1] instead of [0, 1)
   image = tf.sub(image, 0.5)
