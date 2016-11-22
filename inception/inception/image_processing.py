@@ -197,7 +197,7 @@ def distort_image_eval(image, height, width, thread_id=0, scope=None):
   with tf.op_scope([image, height, width], scope, 'distort_image'):
     image = tf.image.central_crop(image, central_fraction=0.875)
     image = tf.image.random_flip_left_right(image)
-    #image = distort_color(image, thread_id)
+    image = distort_color(image, thread_id)
 
     # Resize the image to the original height and width.
     image = tf.expand_dims(image, 0)
