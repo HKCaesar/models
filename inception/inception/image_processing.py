@@ -193,6 +193,34 @@ def distort_color(image, thread_id=0, scope=None):
     image = tf.clip_by_value(image, 0.0, 1.0)
     return image
 
+def distort_image_eval(image, height, width, thread_id=0, scope=None):
+  with tf.op_scope([image, height, width], scope, 'distort_image'):
+
+    # This resizing operation may distort the images because the aspect
+    # ratio is not respected. We select a resize method in a round robin
+    # fashion based on the thread number.
+    # Note that ResizeMethod contains 4 enumerated resizing methods.
+    resize_method = thread_id % 4
+    distorted_image = tf.image.resize_images(image, [height, width],
+                                             method=resize_method)
+    # Restore the shape since the dynamic slice based upon the bbox_size loses
+    # the third dimension.
+    distorted_image.set_shape([height, width, 3])
+    if not thread_id:
+      tf.image_summary('cropped_resized_image',
+                       tf.expand_dims(distorted_image, 0))
+
+    # Randomly flip the image horizontally.
+    distorted_image = tf.image.random_flip_left_right(distorted_image)
+
+    # Randomly distort the colors.
+    distorted_image = distort_color(distorted_image, thread_id)
+
+    if not thread_id:
+      tf.image_summary('final_distorted_image',
+                       tf.expand_dims(distorted_image, 0))
+    return distorted_image
+
 
 def distort_image(image, height, width, bbox, thread_id=0, scope=None):
   """Distort one image for training a network.
@@ -290,7 +318,6 @@ def eval_image(image, height, width, scope=None, thread_id=0):
     # the original image.
     image = tf.image.central_crop(image, central_fraction=0.875)
     image = tf.image.random_flip_left_right(image)
-    image = distort_color(image, thread_id)
     # Resize the image to the original height and width.
     image = tf.expand_dims(image, 0)
     image = tf.image.resize_bilinear(image, [height, width],
@@ -326,7 +353,7 @@ def image_preprocessing(image_buffer, bbox, train, thread_id=0):
   if train:
     image = distort_image(image, height, width, bbox, thread_id)
   else:
-    image = eval_image(image, height, width, thread_id)
+    image = distort_image_eval(image, height, width, thread_id)
 
   # Finally, rescale to [-1,1] instead of [0, 1)
   image = tf.sub(image, 0.5)
