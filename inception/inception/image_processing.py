@@ -496,7 +496,7 @@ def batch_inputs(dataset, batch_size, train, num_preprocess_threads=None,
       reader = dataset.reader()
       _, example_serialized = reader.read(filename_queue)
 
-    number_of_augmented_samples_duing_evaluation = 16
+    number_of_augmented_samples_duing_evaluation = 8
     images_and_labels = []
     for thread_id in range(num_preprocess_threads):
       # Parse a serialized Example proto to extract the image and metadata.
