@@ -196,8 +196,10 @@ def distort_color(image, thread_id=0, scope=None):
 def distort_image_eval(image, height, width, thread_id=0, scope=None):
   with tf.op_scope([image, height, width], scope, 'distort_image'):
     #image = tf.image.central_crop(image, central_fraction=0.875)
-    minx = tf.random_uniform([width], minval=0, maxval=10)
-
+    boxes = tf.constant([[[0.1, 0.1, 0.9, 0.9]]], dtype= tf.float32)
+    box_ind = tf.constant([1], dtype= tf.int32)
+    crop_size = tf.constant([height, width], dtype= tf.int32)
+    image = tf.image.crop_and_resize(image, boxes, box_ind, crop_size)
 
     image = tf.image.random_flip_left_right(image)
     image = distort_color(image, thread_id)
@@ -231,7 +233,6 @@ def distort_eval_image(image, height, width, thread_id=0, scope=None):
   """
   #randomDiff = tf.random_uniform([1, 1, 4], minval=-5, maxval=5)
   #offset = tf.constant([[[6, 6, height - 6, width - 6]]])
-  bbox = tf.constant([[[0.1, 0.1, 0.9, 0.9]]], dtype= tf.float32)
 
   with tf.op_scope([image, height, width, bbox], scope, 'distort_image'):
     sample_distorted_bounding_box = tf.image.sample_distorted_bounding_box(
@@ -409,7 +410,7 @@ def image_preprocessing(image_buffer, bbox, train, thread_id=0):
   if train:
     image = distort_image(image, height, width, bbox, thread_id)
   else:
-    image = distort_eval_image(image, height, width, thread_id)
+    image = distort_image_eval(image, height, width, thread_id)
 
   # Finally, rescale to [-1,1] instead of [0, 1)
   image = tf.sub(image, 0.5)
