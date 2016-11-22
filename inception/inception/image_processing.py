@@ -325,7 +325,7 @@ def image_preprocessing(image_buffer, bbox, train, thread_id=0):
   if train:
     image = distort_image(image, height, width, bbox, thread_id)
   else:
-    image = eval_image(image, height, width)
+    image = distort_image(image, height, width)
 
   # Finally, rescale to [-1,1] instead of [0, 1)
   image = tf.sub(image, 0.5)
