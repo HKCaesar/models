@@ -115,8 +115,8 @@ def _eval_once(saver, summary_writer, top_1_op, top_5_op, summary_op):
           start_time = time.time()
 
       # Compute precision @ 1.
-      precision_at_1 = count_top_1 / total_sample_count
-      recall_at_5 = count_top_5 / total_sample_count
+      precision_at_1 = (8 * count_top_1) / total_sample_count
+      recall_at_5 = (8 * count_top_5) / total_sample_count
       print('%s: precision @ 1 = %.4f recall @ 5 = %.4f [%d examples]' %
             (datetime.now(), precision_at_1, recall_at_5, total_sample_count))
 
