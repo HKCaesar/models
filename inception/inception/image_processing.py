@@ -270,7 +270,7 @@ def distort_eval_image(image, height, width, thread_id=0, scope=None):
     distorted_image = tf.image.random_flip_left_right(distorted_image)
 
     # Randomly distort the colors.
-    distorted_image = distort_color(distorted_image, thread_id)
+    #distorted_image = distort_color(distorted_image, thread_id)
 
     if not thread_id:
       tf.image_summary('final_distorted_image',
