@@ -204,7 +204,7 @@ def distort_image_eval(image, height, width, thread_id=0, scope=None):
     image = tf.image.resize_bilinear(image, [height, width],
                                      align_corners=False)
     image = tf.squeeze(image, [0])
-    return distorted_image
+    return image
 
 
 def distort_image(image, height, width, bbox, thread_id=0, scope=None):
