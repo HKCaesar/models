@@ -195,7 +195,10 @@ def distort_color(image, thread_id=0, scope=None):
 
 def distort_image_eval(image, height, width, thread_id=0, scope=None):
   with tf.op_scope([image, height, width], scope, 'distort_image'):
-    image = tf.image.central_crop(image, central_fraction=0.875)
+    #image = tf.image.central_crop(image, central_fraction=0.875)
+    minx = tf.random_uniform([width], minval=0, maxval=10)
+
+
     image = tf.image.random_flip_left_right(image)
     image = distort_color(image, thread_id)
 
@@ -205,6 +208,74 @@ def distort_image_eval(image, height, width, thread_id=0, scope=None):
                                      align_corners=False)
     image = tf.squeeze(image, [0])
     return image
+
+
+def distort_eval_image(image, height, width, thread_id=0, scope=None):
+  """Distort one image for training a network.
+
+  Distorting images provides a useful technique for augmenting the data
+  set during training in order to make the network invariant to aspects
+  of the image that do not effect the label.
+
+  Args:
+    image: 3-D float Tensor of image
+    height: integer
+    width: integer
+    bbox: 3-D float Tensor of bounding boxes arranged [1, num_boxes, coords]
+      where each coordinate is [0, 1) and the coordinates are arranged
+      as [ymin, xmin, ymax, xmax].
+    thread_id: integer indicating the preprocessing thread.
+    scope: Optional scope for op_scope.
+  Returns:
+    3-D float Tensor of distorted image used for training.
+  """
+  #randomDiff = tf.random_uniform([1, 1, 4], minval=-5, maxval=5)
+  #offset = tf.constant([[[6, 6, height - 6, width - 6]]])
+  bbox = tf.constant([[[10, 10, height - 10, width - 10]]])
+
+  with tf.op_scope([image, height, width, bbox], scope, 'distort_image'):
+    sample_distorted_bounding_box = tf.image.sample_distorted_bounding_box(
+        tf.shape(image),
+        bounding_boxes=bbox,
+        min_object_covered=0.01,
+        aspect_ratio_range=[0.75, 1.33],
+        area_range=[0.01, 1.0],
+        max_attempts=100,
+        use_image_if_no_bounding_boxes=True)
+    bbox_begin, bbox_size, distort_bbox = sample_distorted_bounding_box
+    if not thread_id:
+      image_with_distorted_box = tf.image.draw_bounding_boxes(
+          tf.expand_dims(image, 0), distort_bbox)
+      tf.image_summary('images_with_distorted_bounding_box',
+                       image_with_distorted_box)
+
+    # Crop the image to the specified bounding box.
+    distorted_image = tf.slice(image, bbox_begin, bbox_size)
+
+    # This resizing operation may distort the images because the aspect
+    # ratio is not respected. We select a resize method in a round robin
+    # fashion based on the thread number.
+    # Note that ResizeMethod contains 4 enumerated resizing methods.
+    resize_method = thread_id % 4
+    distorted_image = tf.image.resize_images(distorted_image, [height, width],
+                                             method=resize_method)
+    # Restore the shape since the dynamic slice based upon the bbox_size loses
+    # the third dimension.
+    distorted_image.set_shape([height, width, 3])
+    if not thread_id:
+      tf.image_summary('cropped_resized_image',
+                       tf.expand_dims(distorted_image, 0))
+
+    # Randomly flip the image horizontally.
+    distorted_image = tf.image.random_flip_left_right(distorted_image)
+
+    # Randomly distort the colors.
+    distorted_image = distort_color(distorted_image, thread_id)
+
+    if not thread_id:
+      tf.image_summary('final_distorted_image',
+                       tf.expand_dims(distorted_image, 0))
+    return distorted_image
 
 
 def distort_image(image, height, width, bbox, thread_id=0, scope=None):
@@ -338,7 +409,7 @@ def image_preprocessing(image_buffer, bbox, train, thread_id=0):
   if train:
     image = distort_image(image, height, width, bbox, thread_id)
   else:
-    image = distort_image_eval(image, height, width, thread_id)
+    image = distort_eval_image(image, height, width, thread_id)
 
   # Finally, rescale to [-1,1] instead of [0, 1)
   image = tf.sub(image, 0.5)
